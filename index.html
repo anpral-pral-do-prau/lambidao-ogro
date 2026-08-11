@@ -253,33 +253,26 @@
         // ("ICE failed, add a TURN server"). Um servidor TURN retransmite o
         // tráfego quando a conexão direta não é possível.
         //
-        // Os servidores abaixo são o TURN público gratuito da Open Relay
-        // (Metered) — funcionam para testes, mas por serem públicos podem ficar
-        // instáveis/lentos. Para produção, o ideal é usar um TURN próprio
-        // (coturn) ou um provedor pago (Metered, Twilio, Xirsys).
+        // ---- POOL DE TURN PÚBLICOS GRATUITOS (sem conta, sem servidor seu) ----
+        // Não existe forma 100% independente de furar NAT simétrico/CGNAT sem
+        // ALGUM relay — isso vale pra qualquer chat (WhatsApp, Discord, Zoom
+        // fazem isso nos bastidores com infra própria). Como você não quer
+        // rodar nada nem criar conta, a saída mais simples é usar um POOL de
+        // TURN públicos gratuitos, tentando vários ao mesmo tempo. Se um
+        // estiver instável (como aconteceu com o Open Relay), os outros ainda
+        // podem funcionar — o navegador testa todos e usa o que responder.
         const peerConfig = {
             debug: 2,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' },
-                    {
-                        urls: 'turn:openrelay.metered.ca:80',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    },
-                    {
-                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                        username: 'openrelayproject',
-                        credential: 'openrelayproject'
-                    }
-                ],
-                iceCandidatePoolSize: 4
+                    // Open Relay (Metered) — variantes UDP e TCP
+                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+                    // Numb (viagenie) — outro TURN público independente, mantido a mais tempo
+                    { urls: 'turn:numb.viagenie.ca', username: 'webrtc@live.com', credential: 'muazkh' }
+                ]
             }
         };
 
