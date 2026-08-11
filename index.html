@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lambidão P2P</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #36393f;
+            color: #dcddde;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Tela de Seleção / Criação de Perfil */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #2f3136;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .login-box {
+            background: #36393f;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 320px;
+        }
+        .login-box h2 { color: #fff; margin-top: 0; }
+        .user-select-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .user-profile-btn {
+            background: #40444b;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            border: 1px solid transparent;
+        }
+        .user-profile-btn:hover { background: #4f545c; border-color: #5865f2; }
+
+        /* Barra Lateral */
+        #sidebar {
+            width: 300px;
+            background-color: #2f3136;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-right: 1px solid #202225;
+        }
+        #sidebar h2 { color: #fff; font-size: 16px; margin: 0; }
+        .box {
+            background: #202225;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        .friend-item {
+            padding: 8px;
+            background: #40444b;
+            margin-top: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .friend-item:hover { background: #4f545c; }
+        .friend-item.active { background: #5865f2; color: white; }
+        
+        input, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            background: #40444b;
+            border: none;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        button { background: #5865f2; cursor: pointer; font-weight: bold; }
+        button:hover { background: #4752c4; }
+        button:disabled { background: #4f545c; cursor: not-allowed; opacity: 0.7; }
+        .btn-switch { background: #4f545c; font-size: 11px; margin-top: 5px; }
+        .btn-switch:hover { background: #72767d; }
+        
+        /* Área do Chat */
+        #chat-container { flex: 1; display: flex; flex-direction: column; }
+        #chat-header { background: #36393f; padding: 15px; border-bottom: 1px solid #202225; font-weight: bold; color: #fff; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { background-color: #40444b; padding: 10px; border-radius: 8px; max-width: 80%; align-self: flex-start; word-break: break-word; }
+        .message.me { background-color: #2f3136; border: 1px solid #5865f2; align-self: flex-end; }
+        .message .user { color: #00aff4; font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+        .message .time { color: #72767d; font-size: 10px; margin-left: 8px; font-weight: normal; }
+        #input-area { padding: 20px; }
+        #input-area input { padding: 12px; font-size: 15px; background: #40444b; }
+    </style>
+</head>
+<body>
+
+    <!-- Tela de Login e Troca de Usuários -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Lambidão P2P</h2>
+            
+            <div id="existing-users-container">
+                <span style="font-size: 12px; color: #b9bbbe;">Escolha um perfil existente:</span>
+                <div id="users-list" class="user-select-list"></div>
+                <hr style="border: 0; border-top: 1px solid #4f545c; margin: 15px 0;">
+            </div>
+
+            <span style="font-size: 12px; color: #b9bbbe;">Ou crie um novo perfil:</span>
+            <input type="text" id="username-input" placeholder="Digite seu apelido...">
+            <button id="save-user-btn" style="margin-top: 10px;">Criar Perfil</button>
+        </div>
+    </div>
+
+    <!-- Barra Lateral -->
+    <div id="sidebar">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="display-username">Meu Perfil</h2>
+            <button id="switch-user-btn" class="btn-switch" style="width: auto; padding: 5px 8px;">Trocar Perfil</button>
+        </div>
+        
+        <div class="box">
+            <strong>Seu ID de Amigo:</strong>
+            <div id="my-id" style="color: #3ba55d; font-weight: bold; margin-top: 5px; word-break: break-all; cursor: pointer;" title="Clique para copiar">Gerando ID...</div>
+        </div>
+
+        <div class="box">
+            <strong>Adicionar Amigo por ID:</strong>
+            <input type="text" id="friend-id" placeholder="Cole o ID do amigo aqui">
+            <button id="add-friend-btn">Adicionar Amigo</button>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto;">
+            <strong>Seus Amigos:</strong>
+            <div id="friends-list"></div>
+        </div>
+        
+        <div id="status" style="font-size: 13px; color: #faa61a;">Sem conversas ativas.</div>
+    </div>
+
+    <!-- Área do Chat -->
+    <div id="chat-container">
+        <div id="chat-header">Nenhum amigo selecionado</div>
+        <div id="messages"></div>
+        <div id="input-area">
+            <input type="text" id="message-input" placeholder="Selecione um amigo para conversar..." disabled>
+        </div>
+    </div>
+
+    <!-- Biblioteca PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <script>
+        const loginScreen = document.getElementById('login-screen');
+        const existingUsersContainer = document.getElementById('existing-users-container');
+        const usersListDiv = document.getElementById('users-list');
+        const usernameInput = document.getElementById('username-input');
+        const saveUserBtn = document.getElementById('save-user-btn');
+        const switchUserBtn = document.getElementById('switch-user-btn');
+        const displayUsername = document.getElementById('display-username');
+        const myIdDiv = document.getElementById('my-id');
+        const friendIdInput = document.getElementById('friend-id');
+        const addFriendBtn = document.getElementById('add-friend-btn');
+        const friendsListDiv = document.getElementById('friends-list');
+        const chatHeader = document.getElementById('chat-header');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const statusDiv = document.getElementById('status');
+
+        let perfilAtual = localStorage.getItem('lambidao_active_profile') || null;
+        let perfisCadastrados = JSON.parse(localStorage.getItem('lambidao_profiles')) || [];
+        let amigos = [];
+        let historicoChat = {};
+        
+        let peer = null;
+        let conn = null;
+        let amigoAtualId = null;
+
+        // Servidores STUN públicos resilientes
+        const peerConfig = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
+        };
+
+        renderizarListaPerfis();
+        if (perfilAtual && perfisCadastrados.includes(perfilAtual)) {
+            loginScreen.style.display = 'none';
+            carregarDadosPerfil();
+            inicializarPeer();
+        }
+
+        function renderizarListaPerfis() {
+            usersListDiv.innerHTML = '';
+            if (perfisCadastrados.length === 0) {
+                existingUsersContainer.style.display = 'none';
+                return;
+            }
+            existingUsersContainer.style.display = 'block';
+            perfisCadastrados.forEach(nome => {
+                const btn = document.createElement('div');
+                btn.classList.add('user-profile-btn');
+                btn.innerText = `👤 ${nome}`;
+                btn.onclick = () => selecionarPerfil(nome);
+                usersListDiv.appendChild(btn);
+            });
+        }
+
+        function selecionarPerfil(nome) {
+            perfilAtual = nome;
+            localStorage.setItem('lambidao_active_profile', nome);
+            loginScreen.style.display = 'none';
+            carregarDadosPerfil();
+            inicializarPeer();
+        }
+
+        saveUserBtn.addEventListener('click', () => {
+            const nome = usernameInput.value.trim();
+            if (nome) {
+                if (!perfisCadastrados.includes(nome)) {
+                    perfisCadastrados.push(nome);
+                    localStorage.setItem('lambidao_profiles', JSON.stringify(perfisCadastrados));
+                }
+                usernameInput.value = '';
+                selecionarPerfil(nome);
+            }
+        });
+
+        switchUserBtn.addEventListener('click', () => {
+            if (peer) peer.destroy();
+            if (conn) conn.close();
+            conn = null;
+            amigoAtualId = null;
+            chatHeader.innerText = "Nenhum amigo selecionado";
+            messageInput.disabled = true;
+            messagesDiv.innerHTML = '';
+            
+            renderizarListaPerfis();
+            loginScreen.style.display = 'flex';
+        });
+
+        function carregarDadosPerfil() {
+            displayUsername.innerText = `👋 ${perfilAtual}`;
+            amigos = JSON.parse(localStorage.getItem(`lambidao_friends_${perfilAtual}`)) || [];
+            historicoChat = JSON.parse(localStorage.getItem(`lambidao_chats_${perfilAtual}`)) || {};
+            renderizarAmigos();
+        }
+
+        function salvarDadosPerfil() {
+            localStorage.setItem(`lambidao_friends_${perfilAtual}`, JSON.stringify(amigos));
+            localStorage.setItem(`lambidao_chats_${perfilAtual}`, JSON.stringify(historicoChat));
+        }
+
+        function inicializarPeer() {
+            myIdDiv.innerText = "Gerando seu ID P2P...";
+            
+            const idLimpo = perfilAtual.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const customPeerId = `lambidao-${idLimpo}-${obterHashSimples(perfilAtual)}`;
+
+            if(peer) peer.destroy();
+            peer = new Peer(customPeerId, peerConfig);
+
+            peer.on('open', (id) => {
+                myIdDiv.innerText = id;
+                statusDiv.innerText = "Pronto para conectar!";
+                statusDiv.style.color = "#3ba55d";
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'unavailable-id') {
+                    // ID customizado ocupado, gera um aleatório
+                    peer = new Peer(peerConfig);
+                    peer.on('open', (id) => { myIdDiv.innerText = id; });
+                } else if (err.type === 'peer-unavailable') {
+                    statusDiv.innerText = "ID não encontrado. Seu amigo está offline?";
+                    statusDiv.style.color = "#ed4245";
+                } else {
+                    statusDiv.innerText = `Erro de conexão (${err.type}).`;
+                    statusDiv.style.color = "#ed4245";
+                }
+            });
+
+            peer.on('connection', (connection) => {
+                connection.on('open', () => {
+                    connection.on('data', (data) => handleDataRecebida(data, connection));
+                });
+            });
+        }
+
+        function obterHashSimples(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash << 5) - hash + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16).substring(0, 4);
+        }
+
+        function handleDataRecebida(data, connection) {
+            if (data.type === 'REQUEST_INFO') {
+                connection.send({
+                    type: 'RESPONSE_INFO',
+                    username: perfilAtual
+                });
+                atualizarOuAdicionarAmigo(connection.peer, data.username);
+                return;
+            }
+
+            if (data.type === 'RESPONSE_INFO') {
+                atualizarOuAdicionarAmigo(connection.peer, data.username);
+                if (amigoAtualId === connection.peer) {
+                    chatHeader.innerText = `Conversando com ${data.username}`;
+                }
+                return;
+            }
+
+            if (data.type === 'CHAT_MESSAGE') {
+                salvarMensagemNoHistorico(connection.peer, data.user, data.text, false, data.time);
+                if (amigoAtualId === connection.peer) {
+                    renderizarMensagemNaTela(data.user, data.text, false, data.time);
+                }
+            }
+        }
+
+        function atualizarOuAdicionarAmigo(id, nome) {
+            const amigo = amigos.find(a => a.id === id);
+            if (amigo) {
+                if (nome && nome !== "Usuário Desconhecido" && nome !== "Buscando nome...") amigo.nome = nome;
+            } else {
+                amigos.push({ id: id, nome: nome || "Buscando nome..." });
+            }
+            salvarDadosPerfil();
+            renderizarAmigos();
+        }
+
+        addFriendBtn.addEventListener('click', () => {
+            let id = friendIdInput.value.trim();
+
+            if (!id) return;
+            if (peer && id === peer.id) {
+                alert("Você não pode adicionar seu próprio ID!");
+                return;
+            }
+
+            const jaExiste = amigos.find(a => a.id === id);
+            if (jaExiste) {
+                alert(`Este amigo já está na sua lista!`);
+                return;
+            }
+
+            atualizarOuAdicionarAmigo(id, "Buscando nome...");
+            friendIdInput.value = '';
+
+            statusDiv.innerText = "Amigo salvo! Clique nele para conectar.";
+            statusDiv.style.color = "#3ba55d";
+        });
+
+        function renderizarAmigos() {
+            friendsListDiv.innerHTML = '';
+            if (amigos.length === 0) {
+                friendsListDiv.innerHTML = '<div style="color: #72767d; font-size: 12px; margin-top:5px;">Nenhum amigo salvo.</div>';
+                return;
+            }
+
+            amigos.forEach((amigo, index) => {
+                const div = document.createElement('div');
+                div.classList.add('friend-item');
+                if (amigo.id === amigoAtualId) div.classList.add('active');
+                
+                div.innerHTML = `
+                    <span>🟢 ${escapeHtml(amigo.nome)}</span>
+                    <span class="delete-friend" style="color: #ed4245; font-weight: bold; padding: 0 4px;" title="Remover Amigo">✕</span>
+                `;
+                
+                div.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-friend')) return;
+                    abrirConversa(amigo);
+                });
+
+                div.querySelector('.delete-friend').addEventListener('click', () => {
+                    if (amigoAtualId === amigo.id) {
+                        amigoAtualId = null;
+                        chatHeader.innerText = "Nenhum amigo selecionado";
+                        messageInput.disabled = true;
+                        messagesDiv.innerHTML = '';
+                    }
+                    amigos.splice(index, 1);
+                    salvarDadosPerfil();
+                    renderizarAmigos();
+                });
+
+                friendsListDiv.appendChild(div);
+            });
+        }
+
+        function abrirConversa(amigo) {
+            amigoAtualId = amigo.id;
+            renderizarAmigos();
+            
+            chatHeader.innerText = `Conversando com ${amigo.nome}`;
+            messageInput.placeholder = `Conversar com ${amigo.nome}...`;
+            
+            carregarHistoricoChatLocal(amigo.id);
+
+            statusDiv.innerText = `Conectando a ${amigo.nome}...`;
+            statusDiv.style.color = "#faa61a";
+
+            if (conn) {
+                conn.close();
+            }
+
+            try {
+                conn = peer.connect(amigo.id, { reliable: true });
+                
+                conn.on('open', () => {
+                    statusDiv.innerText = `Conectado com ${amigo.nome}!`;
+                    statusDiv.style.color = "#3ba55d";
+                    messageInput.disabled = false;
+
+                    conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
+                });
+
+                conn.on('data', (data) => handleDataRecebida(data, conn));
+
+                conn.on('error', (err) => {
+                    statusDiv.innerText = "Erro ao tentar conectar.";
+                    statusDiv.style.color = "#ed4245";
+                });
+
+                conn.on('close', () => {
+                    statusDiv.innerText = "Conexão encerrada (Amigo offline).";
+                    statusDiv.style.color = "#faa61a";
+                    messageInput.disabled = true;
+                    messageInput.placeholder = "Amigo offline no momento...";
+                });
+            } catch (e) {
+                statusDiv.innerText = "Não foi possível abrir o canal P2P.";
+                statusDiv.style.color = "#ed4245";
+            }
+        }
+
+        function carregarHistoricoChatLocal(amigoId) {
+            messagesDiv.innerHTML = '';
+            const mensagens = historicoChat[amigoId] || [];
+            mensagens.forEach(msg => {
+                renderizarMensagemNaTela(msg.user, msg.text, msg.ehMim, msg.time);
+            });
+        }
+
+        function salvarMensagemNoHistorico(amigoId, user, text, ehMim, time) {
+            if (!historicoChat[amigoId]) {
+                historicoChat[amigoId] = [];
+            }
+            historicoChat[amigoId].push({ user, text, ehMim, time });
+            salvarDadosPerfil();
+        }
+
+        function renderizarMensagemNaTela(usuario, texto, ehMim, hora) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            if (ehMim) msgDiv.classList.add('me');
+
+            msgDiv.innerHTML = `
+                <div class="user">${escapeHtml(usuario)} <span class="time">${hora}</span></div>
+                <div>${escapeHtml(texto)}</div>
+            `;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && messageInput.value.trim() !== '' && conn && conn.open) {
+                const texto = messageInput.value.trim();
+                const horaAtual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const payload = {
+                    type: 'CHAT_MESSAGE',
+                    user: perfilAtual,
+                    text: texto,
+                    time: horaAtual
+                };
+                
+                conn.send(payload);
+
+                salvarMensagemNoHistorico(amigoAtualId, perfilAtual, texto, true, horaAtual);
+                renderizarMensagemNaTela(perfilAtual, texto, true, horaAtual);
+                
+                messageInput.value = '';
+            }
+        });
+
+        myIdDiv.addEventListener('click', () => {
+            if(myIdDiv.innerText.includes("...")) return;
+            navigator.clipboard.writeText(myIdDiv.innerText);
+            alert("Seu ID P2P foi copiado!");
+        });
+
+        function escapeHtml(text) {
+            return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
+        }
+    </script>
+</body>
+</html>
