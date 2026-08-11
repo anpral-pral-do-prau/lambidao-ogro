@@ -101,6 +101,18 @@
         .btn-switch { background: #4f545c; font-size: 11px; margin-top: 5px; }
         .btn-switch:hover { background: #72767d; }
         
+        /* Area de busca/status */
+        #search-status-box {
+            display: none;
+            background: #202225;
+            border-left: 4px solid #faa61a;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #fff;
+            word-break: break-word;
+        }
+
         /* Área do Chat */
         #chat-container { flex: 1; display: flex; flex-direction: column; }
         #chat-header { background: #36393f; padding: 15px; border-bottom: 1px solid #202225; font-weight: bold; color: #fff; }
@@ -150,12 +162,15 @@
             <button id="add-friend-btn">Adicionar Amigo</button>
         </div>
 
+        <!-- Janelinha de Status de Busca (no lado esquerdo) -->
+        <div id="search-status-box"></div>
+
         <div style="flex: 1; overflow-y: auto;">
             <strong>Seus Amigos:</strong>
             <div id="friends-list"></div>
         </div>
         
-        <div id="status" style="font-size: 13px; color: #faa61a;">Sem conversas ativas.</div>
+        <div id="status" style="font-size: 12px; color: #faa61a;">Sem conversas ativas.</div>
     </div>
 
     <!-- Área do Chat -->
@@ -181,6 +196,7 @@
         const myIdDiv = document.getElementById('my-id');
         const friendIdInput = document.getElementById('friend-id');
         const addFriendBtn = document.getElementById('add-friend-btn');
+        const searchStatusBox = document.getElementById('search-status-box');
         const friendsListDiv = document.getElementById('friends-list');
         const chatHeader = document.getElementById('chat-header');
         const messagesDiv = document.getElementById('messages');
@@ -195,8 +211,8 @@
         let peer = null;
         let conn = null;
         let amigoAtualId = null;
+        let buscaTimeout = null;
 
-        // Servidores STUN públicos resilientes
         const peerConfig = {
             config: {
                 iceServers: [
@@ -257,6 +273,7 @@
             chatHeader.innerText = "Nenhum amigo selecionado";
             messageInput.disabled = true;
             messagesDiv.innerHTML = '';
+            ocultarJanelaBusca();
             
             renderizarListaPerfis();
             loginScreen.style.display = 'flex';
@@ -290,22 +307,24 @@
             });
 
             peer.on('error', (err) => {
-                if (err.type === 'unavailable-id') {
-                    // ID customizado ocupado, gera um aleatório
+                if (err.type === 'peer-unavailable') {
+                    exibirJanelaBusca("❌ Usuário não encontrado ou está offline.", "#ed4245");
+                    cancelarBuscaEmAndamento();
+                } else if (err.type === 'unavailable-id') {
                     peer = new Peer(peerConfig);
                     peer.on('open', (id) => { myIdDiv.innerText = id; });
-                } else if (err.type === 'peer-unavailable') {
-                    statusDiv.innerText = "ID não encontrado. Seu amigo está offline?";
-                    statusDiv.style.color = "#ed4245";
                 } else {
-                    statusDiv.innerText = `Erro de conexão (${err.type}).`;
-                    statusDiv.style.color = "#ed4245";
+                    exibirJanelaBusca(`❌ Erro de conexão: ${err.type}`, "#ed4245");
+                    cancelarBuscaEmAndamento();
                 }
             });
 
             peer.on('connection', (connection) => {
                 connection.on('open', () => {
+                    connection.send({ type: 'REQUEST_INFO', username: perfilAtual });
+                    
                     connection.on('data', (data) => handleDataRecebida(data, connection));
+                    connection.on('close', () => tratarDesconexao());
                 });
             });
         }
@@ -319,21 +338,81 @@
             return Math.abs(hash).toString(16).substring(0, 4);
         }
 
+        function exibirJanelaBusca(texto, corBorda = "#faa61a") {
+            searchStatusBox.style.display = "block";
+            searchStatusBox.style.borderLeftColor = corBorda;
+            searchStatusBox.innerText = texto;
+        }
+
+        function ocultarJanelaBusca() {
+            searchStatusBox.style.display = "none";
+        }
+
+        function cancelarBuscaEmAndamento() {
+            if (buscaTimeout) clearTimeout(buscaTimeout);
+            addFriendBtn.disabled = false;
+            addFriendBtn.innerText = "Adicionar Amigo";
+            if (conn && !amigoAtualId) {
+                conn.close();
+                conn = null;
+            }
+        }
+
+        addFriendBtn.addEventListener('click', () => {
+            let targetId = friendIdInput.value.trim();
+
+            if (!targetId) return;
+            if (peer && targetId === peer.id) {
+                exibirJanelaBusca("❌ Você não pode adicionar seu próprio ID!", "#ed4245");
+                return;
+            }
+
+            const jaExiste = amigos.find(a => a.id === targetId);
+            if (jaExiste) {
+                exibirJanelaBusca(`ℹ️ ${jaExiste.nome} já está na sua lista!`, "#5865f2");
+                return;
+            }
+
+            addFriendBtn.disabled = true;
+            addFriendBtn.innerText = "Buscando...";
+            exibirJanelaBusca("🔍 Buscando usuário na rede P2P...", "#faa61a");
+
+            if (conn) conn.close();
+
+            conn = peer.connect(targetId, { reliable: true });
+
+            buscaTimeout = setTimeout(() => {
+                if (!conn || !conn.open) {
+                    exibirJanelaBusca("❌ Usuário não encontrado ou offline.", "#ed4245");
+                    cancelarBuscaEmAndamento();
+                }
+            }, 8000);
+
+            conn.on('open', () => {
+                conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
+                conn.on('data', (data) => handleDataRecebida(data, conn));
+                conn.on('close', () => tratarDesconexao());
+            });
+        });
+
         function handleDataRecebida(data, connection) {
             if (data.type === 'REQUEST_INFO') {
-                connection.send({
-                    type: 'RESPONSE_INFO',
-                    username: perfilAtual
-                });
-                atualizarOuAdicionarAmigo(connection.peer, data.username);
+                connection.send({ type: 'RESPONSE_INFO', username: perfilAtual });
+                adicionarAmigoConfirmado(connection.peer, data.username);
                 return;
             }
 
             if (data.type === 'RESPONSE_INFO') {
-                atualizarOuAdicionarAmigo(connection.peer, data.username);
-                if (amigoAtualId === connection.peer) {
-                    chatHeader.innerText = `Conversando com ${data.username}`;
-                }
+                if (buscaTimeout) clearTimeout(buscaTimeout);
+                
+                adicionarAmigoConfirmado(connection.peer, data.username);
+                exibirJanelaBusca(`✅ Usuário "${data.username}" encontrado e adicionado!`, "#3ba55d");
+                
+                addFriendBtn.disabled = false;
+                addFriendBtn.innerText = "Adicionar Amigo";
+                friendIdInput.value = '';
+
+                setTimeout(() => { ocultarJanelaBusca(); }, 5000);
                 return;
             }
 
@@ -345,38 +424,27 @@
             }
         }
 
-        function atualizarOuAdicionarAmigo(id, nome) {
-            const amigo = amigos.find(a => a.id === id);
-            if (amigo) {
-                if (nome && nome !== "Usuário Desconhecido" && nome !== "Buscando nome...") amigo.nome = nome;
+        function adicionarAmigoConfirmado(id, nome) {
+            if (!nome) return;
+            
+            const existe = amigos.find(a => a.id === id);
+            if (existe) {
+                existe.nome = nome;
             } else {
-                amigos.push({ id: id, nome: nome || "Buscando nome..." });
+                amigos.push({ id: id, nome: nome });
             }
+            
             salvarDadosPerfil();
             renderizarAmigos();
+            abrirConversa({ id: id, nome: nome }, false);
         }
 
-        addFriendBtn.addEventListener('click', () => {
-            let id = friendIdInput.value.trim();
-
-            if (!id) return;
-            if (peer && id === peer.id) {
-                alert("Você não pode adicionar seu próprio ID!");
-                return;
-            }
-
-            const jaExiste = amigos.find(a => a.id === id);
-            if (jaExiste) {
-                alert(`Este amigo já está na sua lista!`);
-                return;
-            }
-
-            atualizarOuAdicionarAmigo(id, "Buscando nome...");
-            friendIdInput.value = '';
-
-            statusDiv.innerText = "Amigo salvo! Clique nele para conectar.";
-            statusDiv.style.color = "#3ba55d";
-        });
+        function tratarDesconexao() {
+            statusDiv.innerText = "Conexão encerrada (Amigo offline).";
+            statusDiv.style.color = "#faa61a";
+            messageInput.disabled = true;
+            messageInput.placeholder = "Amigo offline no momento...";
+        }
 
         function renderizarAmigos() {
             friendsListDiv.innerHTML = '';
@@ -416,7 +484,7 @@
             });
         }
 
-        function abrirConversa(amigo) {
+        function abrirConversa(amigo, reconectar = true) {
             amigoAtualId = amigo.id;
             renderizarAmigos();
             
@@ -425,14 +493,12 @@
             
             carregarHistoricoChatLocal(amigo.id);
 
-            statusDiv.innerText = `Conectando a ${amigo.nome}...`;
-            statusDiv.style.color = "#faa61a";
+            if (reconectar) {
+                statusDiv.innerText = `Conectando a ${amigo.nome}...`;
+                statusDiv.style.color = "#faa61a";
 
-            if (conn) {
-                conn.close();
-            }
+                if (conn) conn.close();
 
-            try {
                 conn = peer.connect(amigo.id, { reliable: true });
                 
                 conn.on('open', () => {
@@ -444,21 +510,11 @@
                 });
 
                 conn.on('data', (data) => handleDataRecebida(data, conn));
-
-                conn.on('error', (err) => {
-                    statusDiv.innerText = "Erro ao tentar conectar.";
-                    statusDiv.style.color = "#ed4245";
-                });
-
-                conn.on('close', () => {
-                    statusDiv.innerText = "Conexão encerrada (Amigo offline).";
-                    statusDiv.style.color = "#faa61a";
-                    messageInput.disabled = true;
-                    messageInput.placeholder = "Amigo offline no momento...";
-                });
-            } catch (e) {
-                statusDiv.innerText = "Não foi possível abrir o canal P2P.";
-                statusDiv.style.color = "#ed4245";
+                conn.on('close', () => tratarDesconexao());
+            } else {
+                statusDiv.innerText = `Conectado com ${amigo.nome}!`;
+                statusDiv.style.color = "#3ba55d";
+                messageInput.disabled = false;
             }
         }
 
