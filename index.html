@@ -101,7 +101,7 @@
         .btn-switch { background: #4f545c; font-size: 11px; margin-top: 5px; }
         .btn-switch:hover { background: #72767d; }
         
-        /* Area de busca/status */
+        /* Área de busca/status */
         #search-status-box {
             display: none;
             background: #202225;
@@ -121,8 +121,30 @@
         .message.me { background-color: #2f3136; border: 1px solid #5865f2; align-self: flex-end; }
         .message .user { color: #00aff4; font-weight: bold; font-size: 13px; margin-bottom: 4px; }
         .message .time { color: #72767d; font-size: 10px; margin-left: 8px; font-weight: normal; }
-        #input-area { padding: 20px; }
-        #input-area input { padding: 12px; font-size: 15px; background: #40444b; }
+        
+        /* Área de Input com Tag de Build */
+        #input-area { 
+            padding: 20px; 
+            position: relative; 
+            display: flex; 
+            align-items: center; 
+        }
+        #input-area input { 
+            padding: 12px; 
+            padding-right: 65px; 
+            font-size: 15px; 
+            background: #40444b; 
+        }
+        .build-tag {
+            position: absolute;
+            right: 32px;
+            color: #72767d;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -162,7 +184,7 @@
             <button id="add-friend-btn">Adicionar Amigo</button>
         </div>
 
-        <!-- Janelinha de Status de Busca (no lado esquerdo) -->
+        <!-- Janelinha de Status de Busca -->
         <div id="search-status-box"></div>
 
         <div style="flex: 1; overflow-y: auto;">
@@ -179,6 +201,7 @@
         <div id="messages"></div>
         <div id="input-area">
             <input type="text" id="message-input" placeholder="Selecione um amigo para conversar..." disabled>
+            <span class="build-tag">build 1</span>
         </div>
     </div>
 
