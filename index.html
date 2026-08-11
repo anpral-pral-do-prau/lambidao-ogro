@@ -256,21 +256,24 @@
         // ---- POOL DE TURN PÚBLICOS GRATUITOS (sem conta, sem servidor seu) ----
         // Não existe forma 100% independente de furar NAT simétrico/CGNAT sem
         // ALGUM relay — isso vale pra qualquer chat (WhatsApp, Discord, Zoom
-        // fazem isso nos bastidores com infra própria). Como você não quer
-        // rodar nada nem criar conta, a saída mais simples é usar um POOL de
-        // TURN públicos gratuitos, tentando vários ao mesmo tempo. Se um
-        // estiver instável (como aconteceu com o Open Relay), os outros ainda
-        // podem funcionar — o navegador testa todos e usa o que responder.
+        // fazem isso nos bastidores com infra própria).
+        //
+        // Log real de teste (Sul x Nordeste) mostrou "ICE state: checking ->
+        // disconnected" e "your TURN server appears to be broken" nos DOIS
+        // lados — ou seja, a rota mais longa está batendo em bloqueio/limite
+        // dos TURN públicos gratuitos. Estratégia: priorizar TCP na porta 443
+        // (trafega igual HTTPS normal, é o mais difícil de bloquear por
+        // firewall de operadora) e manter só 4 entradas no total pra não cair
+        // no aviso de "5+ servidores deixam a descoberta lenta".
         const peerConfig = {
             debug: 2,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    // Open Relay (Metered) — variantes UDP e TCP
-                    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                    // TCP primeiro — mais chance de furar bloqueio de operadora/CGNAT
                     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-                    // Numb (viagenie) — outro TURN público independente, mantido a mais tempo
+                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                    // TURN independente (viagenie), como segunda opção caso o Open Relay esteja sobrecarregado
                     { urls: 'turn:numb.viagenie.ca', username: 'webrtc@live.com', credential: 'muazkh' }
                 ]
             }
@@ -464,7 +467,7 @@
                     exibirJanelaBusca("❌ Usuário não encontrado, offline, ou a conexão ICE não fechou a tempo (verifique o console / about:webrtc).", "#ed4245");
                     cancelarBuscaEmAndamento();
                 }
-            }, 15000);
+            }, 25000);
 
             conn.on('open', () => {
                 conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
