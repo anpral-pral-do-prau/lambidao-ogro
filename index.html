@@ -145,6 +145,14 @@
             user-select: none;
             opacity: 0.7;
         }
+        .conn-mode {
+            position: absolute;
+            left: 20px;
+            top: -18px;
+            color: #72767d;
+            font-size: 10px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -200,8 +208,9 @@
         <div id="chat-header">Nenhum amigo selecionado</div>
         <div id="messages"></div>
         <div id="input-area">
+            <span id="conn-mode" class="conn-mode"></span>
             <input type="text" id="message-input" placeholder="Selecione um amigo para conversar..." disabled>
-            <span class="build-tag">build 1</span>
+            <span class="build-tag">build 2</span>
         </div>
     </div>
 
@@ -225,6 +234,7 @@
         const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
         const statusDiv = document.getElementById('status');
+        const connModeSpan = document.getElementById('conn-mode');
 
         let perfilAtual = localStorage.getItem('lambidao_active_profile') || null;
         let perfisCadastrados = JSON.parse(localStorage.getItem('lambidao_profiles')) || [];
@@ -236,12 +246,40 @@
         let amigoAtualId = null;
         let buscaTimeout = null;
 
+        // ---- CONFIG DE ICE (STUN + TURN) ----
+        // STUN sozinho não é suficiente quando os dois lados estão atrás de NAT
+        // simétrico / CGNAT (muito comum em operadoras móveis e alguns provedores
+        // no Brasil). Nesses casos o ICE fica em "checking" pra sempre e falha
+        // ("ICE failed, add a TURN server"). Um servidor TURN retransmite o
+        // tráfego quando a conexão direta não é possível.
+        //
+        // Os servidores abaixo são o TURN público gratuito da Open Relay
+        // (Metered) — funcionam para testes, mas por serem públicos podem ficar
+        // instáveis/lentos. Para produção, o ideal é usar um TURN próprio
+        // (coturn) ou um provedor pago (Metered, Twilio, Xirsys).
         const peerConfig = {
+            debug: 2,
             config: {
                 iceServers: [
                     { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478' }
-                ]
+                    { urls: 'stun:global.stun.twilio.com:3478' },
+                    {
+                        urls: 'turn:openrelay.metered.ca:80',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    },
+                    {
+                        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
+                ],
+                iceCandidatePoolSize: 4
             }
         };
 
@@ -330,6 +368,7 @@
             });
 
             peer.on('error', (err) => {
+                console.error('Peer error:', err.type, err);
                 if (err.type === 'peer-unavailable') {
                     exibirJanelaBusca("❌ Usuário não encontrado ou está offline.", "#ed4245");
                     cancelarBuscaEmAndamento();
@@ -343,12 +382,32 @@
             });
 
             peer.on('connection', (connection) => {
+                monitorarIceState(connection);
                 connection.on('open', () => {
                     connection.send({ type: 'REQUEST_INFO', username: perfilAtual });
                     
                     connection.on('data', (data) => handleDataRecebida(data, connection));
                     connection.on('close', () => tratarDesconexao());
                 });
+            });
+        }
+
+        // Loga e mostra na tela o estado da conexão ICE (checking / connected /
+        // failed / disconnected). Isso é o mesmo tipo de informação que aparece
+        // em about:webrtc no Firefox, só que direto na sua interface.
+        function monitorarIceState(connection) {
+            connection.on('iceStateChanged', (state) => {
+                console.log('ICE state:', state);
+                if (state === 'checking') {
+                    connModeSpan.innerText = '🔄 negociando conexão (ICE checking)...';
+                } else if (state === 'connected' || state === 'completed') {
+                    connModeSpan.innerText = '';
+                } else if (state === 'failed') {
+                    connModeSpan.innerText = '⚠️ ICE falhou — verifique o TURN';
+                    exibirJanelaBusca("❌ Falha na conexão P2P (ICE failed). Se persistir, a rede de um dos dois está bloqueando conexões diretas mesmo com TURN — tente outra rede (ex: sair do 4G/CGNAT).", "#ed4245");
+                } else if (state === 'disconnected') {
+                    connModeSpan.innerText = '⚠️ conexão instável...';
+                }
             });
         }
 
@@ -398,18 +457,21 @@
 
             addFriendBtn.disabled = true;
             addFriendBtn.innerText = "Buscando...";
-            exibirJanelaBusca("🔍 Buscando usuário na rede P2P...", "#faa61a");
+            // Timeout maior: com TURN, a negociação ICE pode demorar mais que os
+            // 8s originais, principalmente em conexões móveis/CGNAT.
+            exibirJanelaBusca("🔍 Buscando usuário na rede P2P (pode levar até 15s em algumas redes)...", "#faa61a");
 
             if (conn) conn.close();
 
             conn = peer.connect(targetId, { reliable: true });
+            monitorarIceState(conn);
 
             buscaTimeout = setTimeout(() => {
                 if (!conn || !conn.open) {
-                    exibirJanelaBusca("❌ Usuário não encontrado ou offline.", "#ed4245");
+                    exibirJanelaBusca("❌ Usuário não encontrado, offline, ou a conexão ICE não fechou a tempo (verifique o console / about:webrtc).", "#ed4245");
                     cancelarBuscaEmAndamento();
                 }
-            }, 8000);
+            }, 15000);
 
             conn.on('open', () => {
                 conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
@@ -467,6 +529,7 @@
             statusDiv.style.color = "#faa61a";
             messageInput.disabled = true;
             messageInput.placeholder = "Amigo offline no momento...";
+            connModeSpan.innerText = '';
         }
 
         function renderizarAmigos() {
@@ -523,6 +586,7 @@
                 if (conn) conn.close();
 
                 conn = peer.connect(amigo.id, { reliable: true });
+                monitorarIceState(conn);
                 
                 conn.on('open', () => {
                     statusDiv.innerText = `Conectado com ${amigo.nome}!`;
