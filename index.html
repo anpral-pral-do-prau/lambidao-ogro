@@ -245,6 +245,21 @@
         let conn = null;
         let amigoAtualId = null;
         let buscaTimeout = null;
+        let tentativasReconexao = 0;
+
+        function tentarReconectarSinalizacao() {
+            if (tentativasReconexao >= 4) {
+                statusDiv.innerText = "❌ Não foi possível conectar ao servidor de sinalização. Tente novamente mais tarde.";
+                statusDiv.style.color = "#ed4245";
+                tentativasReconexao = 0;
+                return;
+            }
+            tentativasReconexao++;
+            setTimeout(() => {
+                console.log(`Tentativa de reconexão ${tentativasReconexao}/4...`);
+                inicializarPeer();
+            }, 2000 * tentativasReconexao); // backoff progressivo: 2s, 4s, 6s, 8s
+        }
 
         // ---- CONFIG DE ICE (STUN + TURN) ----
         // STUN sozinho não é suficiente quando os dois lados estão atrás de NAT
@@ -361,6 +376,7 @@
                 myIdDiv.innerText = id;
                 statusDiv.innerText = "Pronto para conectar!";
                 statusDiv.style.color = "#3ba55d";
+                tentativasReconexao = 0;
             });
 
             peer.on('error', (err) => {
@@ -371,6 +387,13 @@
                 } else if (err.type === 'unavailable-id') {
                     peer = new Peer(peerConfig);
                     peer.on('open', (id) => { myIdDiv.innerText = id; });
+                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') {
+                    // Falha no SERVIDOR DE SINALIZAÇÃO (0.peerjs.com), diferente
+                    // de falha de ICE/TURN. Costuma ser intermitente — tenta
+                    // reconectar automaticamente algumas vezes antes de desistir.
+                    statusDiv.innerText = "⚠️ Servidor de sinalização caiu, tentando reconectar...";
+                    statusDiv.style.color = "#faa61a";
+                    tentarReconectarSinalizacao();
                 } else {
                     exibirJanelaBusca(`❌ Erro de conexão: ${err.type}`, "#ed4245");
                     cancelarBuscaEmAndamento();
