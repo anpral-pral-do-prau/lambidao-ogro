@@ -1,688 +1,182 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lambidão P2P</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #36393f;
-            color: #dcddde;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        /* Tela de Seleção / Criação de Perfil */
-        #login-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #2f3136;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-        .login-box {
-            background: #36393f;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            text-align: center;
-            width: 320px;
-        }
-        .login-box h2 { color: #fff; margin-top: 0; }
-        .user-select-list {
-            max-height: 150px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .user-profile-btn {
-            background: #40444b;
-            color: #fff;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: left;
-            border: 1px solid transparent;
-        }
-        .user-profile-btn:hover { background: #4f545c; border-color: #5865f2; }
-
-        /* Barra Lateral */
-        #sidebar {
-            width: 300px;
-            background-color: #2f3136;
-            padding: 15px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border-right: 1px solid #202225;
-        }
-        #sidebar h2 { color: #fff; font-size: 16px; margin: 0; }
-        .box {
-            background: #202225;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-        .friend-item {
-            padding: 8px;
-            background: #40444b;
-            margin-top: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .friend-item:hover { background: #4f545c; }
-        .friend-item.active { background: #5865f2; color: white; }
-        
-        input, button {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            background: #40444b;
-            border: none;
-            color: #fff;
-            border-radius: 4px;
-            box-sizing: border-box;
-            outline: none;
-        }
-        button { background: #5865f2; cursor: pointer; font-weight: bold; }
-        button:hover { background: #4752c4; }
-        button:disabled { background: #4f545c; cursor: not-allowed; opacity: 0.7; }
-        .btn-switch { background: #4f545c; font-size: 11px; margin-top: 5px; }
-        .btn-switch:hover { background: #72767d; }
-        
-        /* Área de busca/status */
-        #search-status-box {
-            display: none;
-            background: #202225;
-            border-left: 4px solid #faa61a;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #fff;
-            word-break: break-word;
-        }
-
-        /* Área do Chat */
-        #chat-container { flex: 1; display: flex; flex-direction: column; }
-        #chat-header { background: #36393f; padding: 15px; border-bottom: 1px solid #202225; font-weight: bold; color: #fff; }
-        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { background-color: #40444b; padding: 10px; border-radius: 8px; max-width: 80%; align-self: flex-start; word-break: break-word; }
-        .message.me { background-color: #2f3136; border: 1px solid #5865f2; align-self: flex-end; }
-        .message .user { color: #00aff4; font-weight: bold; font-size: 13px; margin-bottom: 4px; }
-        .message .time { color: #72767d; font-size: 10px; margin-left: 8px; font-weight: normal; }
-        
-        /* Área de Input com Tag de Build */
-        #input-area { 
-            padding: 20px; 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-        }
-        #input-area input { 
-            padding: 12px; 
-            padding-right: 65px; 
-            font-size: 15px; 
-            background: #40444b; 
-        }
-        .build-tag {
-            position: absolute;
-            right: 32px;
-            color: #72767d;
-            font-size: 11px;
-            font-family: monospace;
-            pointer-events: none;
-            user-select: none;
-            opacity: 0.7;
-        }
-        .conn-mode {
-            position: absolute;
-            left: 20px;
-            top: -18px;
-            color: #72767d;
-            font-size: 10px;
-            font-family: monospace;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ogro Linked Audio</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#2f3136; color:#dcddde; text-align:center; padding:20px; margin:0; }
+  h1 { color:#fff; font-size:22px; }
+  .box { background:#202225; padding:20px; border-radius:8px; max-width:400px; margin:20px auto; }
+  button { padding:14px; font-size:16px; margin:8px; width:90%; background:#5865f2; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+  button:hover { background:#4752c4; }
+  button:disabled { background:#4f545c; cursor:not-allowed; }
+  input { padding:12px; font-size:16px; width:85%; margin:8px; border-radius:5px; border:none; }
+  #meuid { color:#3ba55d; font-weight:bold; font-size:22px; word-break:break-all; }
+  #status { font-size:13px; color:#faa61a; margin-top:15px; }
+  .hidden { display:none; }
+</style>
 </head>
 <body>
 
-    <!-- Tela de Login e Troca de Usuários -->
-    <div id="login-screen">
-        <div class="login-box">
-            <h2>Lambidão P2P</h2>
-            
-            <div id="existing-users-container">
-                <span style="font-size: 12px; color: #b9bbbe;">Escolha um perfil existente:</span>
-                <div id="users-list" class="user-select-list"></div>
-                <hr style="border: 0; border-top: 1px solid #4f545c; margin: 15px 0;">
-            </div>
+<h1>🎧 Ogro Linked Audio</h1>
 
-            <span style="font-size: 12px; color: #b9bbbe;">Ou crie um novo perfil:</span>
-            <input type="text" id="username-input" placeholder="Digite seu apelido...">
-            <button id="save-user-btn" style="margin-top: 10px;">Criar Perfil</button>
-        </div>
-    </div>
+<div id="tela-escolha" class="box">
+  <p>Quem e voce nessa transmissao?</p>
+  <button onclick="virarMensageiro()">📤 Mensageiro (envia o audio)</button>
+  <button onclick="virarReceptor()">📥 Receptor (recebe e toca)</button>
+</div>
 
-    <!-- Barra Lateral -->
-    <div id="sidebar">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 id="display-username">Meu Perfil</h2>
-            <button id="switch-user-btn" class="btn-switch" style="width: auto; padding: 5px 8px;">Trocar Perfil</button>
-        </div>
-        
-        <div class="box">
-            <strong>Seu ID de Amigo:</strong>
-            <div id="my-id" style="color: #3ba55d; font-weight: bold; margin-top: 5px; word-break: break-all; cursor: pointer;" title="Clique para copiar">Gerando ID...</div>
-        </div>
+<div id="tela-mensageiro" class="box hidden">
+  <h3>📤 Mensageiro</h3>
+  <p>Seu ID (compartilhe com o Receptor):</p>
+  <div id="meuid">gerando...</div>
+  <p id="status">Iniciando...</p>
+</div>
 
-        <div class="box">
-            <strong>Adicionar Amigo por ID:</strong>
-            <input type="text" id="friend-id" placeholder="Cole o ID do amigo aqui">
-            <button id="add-friend-btn">Adicionar Amigo</button>
-        </div>
+<div id="tela-receptor" class="box hidden">
+  <h3>📥 Receptor</h3>
+  <p>Cole o ID do Mensageiro:</p>
+  <input type="text" id="idalvo" placeholder="ex: ogro-4821">
+  <br>
+  <button id="btn-conectar" onclick="conectarReceptor()">Conectar e Tocar</button>
+  <p id="status2">Aguardando...</p>
+  <audio id="player" autoplay controls style="width:100%; margin-top:10px;"></audio>
+</div>
 
-        <!-- Janelinha de Status de Busca -->
-        <div id="search-status-box"></div>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+const peerConfig = {
+  debug: 2,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+    ]
+  }
+};
 
-        <div style="flex: 1; overflow-y: auto;">
-            <strong>Seus Amigos:</strong>
-            <div id="friends-list"></div>
-        </div>
-        
-        <div id="status" style="font-size: 12px; color: #faa61a;">Sem conversas ativas.</div>
-    </div>
+let peer = null;
+let meuStream = null;
 
-    <!-- Área do Chat -->
-    <div id="chat-container">
-        <div id="chat-header">Nenhum amigo selecionado</div>
-        <div id="messages"></div>
-        <div id="input-area">
-            <span id="conn-mode" class="conn-mode"></span>
-            <input type="text" id="message-input" placeholder="Selecione um amigo para conversar..." disabled>
-            <span class="build-tag">build 3</span>
-        </div>
-    </div>
+function esconderTudo() {
+  document.getElementById('tela-escolha').classList.add('hidden');
+  document.getElementById('tela-mensageiro').classList.add('hidden');
+  document.getElementById('tela-receptor').classList.add('hidden');
+}
 
-    <!-- Biblioteca PeerJS -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+// ---------------- MENSAGEIRO ----------------
+async function virarMensageiro() {
+  esconderTudo();
+  document.getElementById('tela-mensageiro').classList.remove('hidden');
+  const status = document.getElementById('status');
 
-    <script>
-        const loginScreen = document.getElementById('login-screen');
-        const existingUsersContainer = document.getElementById('existing-users-container');
-        const usersListDiv = document.getElementById('users-list');
-        const usernameInput = document.getElementById('username-input');
-        const saveUserBtn = document.getElementById('save-user-btn');
-        const switchUserBtn = document.getElementById('switch-user-btn');
-        const displayUsername = document.getElementById('display-username');
-        const myIdDiv = document.getElementById('my-id');
-        const friendIdInput = document.getElementById('friend-id');
-        const addFriendBtn = document.getElementById('add-friend-btn');
-        const searchStatusBox = document.getElementById('search-status-box');
-        const friendsListDiv = document.getElementById('friends-list');
-        const chatHeader = document.getElementById('chat-header');
-        const messagesDiv = document.getElementById('messages');
-        const messageInput = document.getElementById('message-input');
-        const statusDiv = document.getElementById('status');
-        const connModeSpan = document.getElementById('conn-mode');
+  try {
+    status.innerText = 'Pedindo acesso ao audio (escolha o microfone streamsink/monitor)...';
+    meuStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    status.innerText = 'Audio pronto. Gerando ID...';
+  } catch (e) {
+    status.innerText = 'Erro ao pegar audio: ' + e.message;
+    return;
+  }
 
-        let perfilAtual = localStorage.getItem('lambidao_active_profile') || null;
-        let perfisCadastrados = JSON.parse(localStorage.getItem('lambidao_profiles')) || [];
-        let amigos = [];
-        let historicoChat = {};
-        
-        let peer = null;
-        let conn = null;
-        let amigoAtualId = null;
-        let buscaTimeout = null;
-        let tentativasReconexao = 0;
+  const idFixo = 'ogro-' + Math.floor(Math.random()*9000 + 1000);
+  peer = new Peer(idFixo, peerConfig);
 
-        function tentarReconectarSinalizacao() {
-            if (tentativasReconexao >= 4) {
-                statusDiv.innerText = "❌ Não foi possível conectar ao servidor de sinalização. Tente novamente mais tarde.";
-                statusDiv.style.color = "#ed4245";
-                tentativasReconexao = 0;
-                return;
-            }
-            tentativasReconexao++;
-            setTimeout(() => {
-                console.log(`Tentativa de reconexão ${tentativasReconexao}/4...`);
-                inicializarPeer();
-            }, 2000 * tentativasReconexao); // backoff progressivo: 2s, 4s, 6s, 8s
-        }
+  peer.on('open', (id) => {
+    document.getElementById('meuid').innerText = id;
+    status.innerText = '✅ Pronto. Aguardando o Receptor conectar...';
+  });
 
-        // ---- CONFIG DE ICE (STUN + TURN) ----
-        // STUN sozinho não é suficiente quando os dois lados estão atrás de NAT
-        // simétrico / CGNAT (muito comum em operadoras móveis e alguns provedores
-        // no Brasil). Nesses casos o ICE fica em "checking" pra sempre e falha
-        // ("ICE failed, add a TURN server"). Um servidor TURN retransmite o
-        // tráfego quando a conexão direta não é possível.
-        //
-        // ---- POOL DE TURN PÚBLICOS GRATUITOS (sem conta, sem servidor seu) ----
-        // Não existe forma 100% independente de furar NAT simétrico/CGNAT sem
-        // ALGUM relay — isso vale pra qualquer chat (WhatsApp, Discord, Zoom
-        // fazem isso nos bastidores com infra própria).
-        //
-        // Log real de teste (Sul x Nordeste) mostrou "ICE state: checking ->
-        // disconnected" e "your TURN server appears to be broken" nos DOIS
-        // lados — ou seja, a rota mais longa está batendo em bloqueio/limite
-        // dos TURN públicos gratuitos. Estratégia: priorizar TCP na porta 443
-        // (trafega igual HTTPS normal, é o mais difícil de bloquear por
-        // firewall de operadora) e manter só 4 entradas no total pra não cair
-        // no aviso de "5+ servidores deixam a descoberta lenta".
-        const peerConfig = {
-            debug: 2,
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    // TCP primeiro — mais chance de furar bloqueio de operadora/CGNAT
-                    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-                    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-                    // TURN independente (viagenie), como segunda opção caso o Open Relay esteja sobrecarregado
-                    { urls: 'turn:numb.viagenie.ca', username: 'webrtc@live.com', credential: 'muazkh' }
-                ]
-            }
-        };
+  // So aceita chamadas DEPOIS que o audio (meuStream) ja esta pronto,
+  // isso evita o "conectando infinito" de antes (corrida entre call e getUserMedia)
+  peer.on('call', (chamada) => {
+    status.innerText = '📞 Receptor conectando...';
+    chamada.answer(meuStream);
+    chamada.on('stream', () => {
+      status.innerText = '🔊 Transmitindo em tempo real!';
+    });
+    chamada.on('close', () => {
+      status.innerText = 'Receptor desconectou.';
+    });
+    chamada.on('error', (e) => {
+      status.innerText = 'Erro na chamada: ' + e;
+    });
+  });
 
-        renderizarListaPerfis();
-        if (perfilAtual && perfisCadastrados.includes(perfilAtual)) {
-            loginScreen.style.display = 'none';
-            carregarDadosPerfil();
-            inicializarPeer();
-        }
+  peer.on('error', (err) => {
+    status.innerText = '❌ Erro: ' + err.type;
+  });
 
-        function renderizarListaPerfis() {
-            usersListDiv.innerHTML = '';
-            if (perfisCadastrados.length === 0) {
-                existingUsersContainer.style.display = 'none';
-                return;
-            }
-            existingUsersContainer.style.display = 'block';
-            perfisCadastrados.forEach(nome => {
-                const btn = document.createElement('div');
-                btn.classList.add('user-profile-btn');
-                btn.innerText = `👤 ${nome}`;
-                btn.onclick = () => selecionarPerfil(nome);
-                usersListDiv.appendChild(btn);
-            });
-        }
+  peer.on('disconnected', () => {
+    status.innerText = '⚠️ Desconectado do servidor, tentando religar...';
+    peer.reconnect();
+  });
+}
 
-        function selecionarPerfil(nome) {
-            perfilAtual = nome;
-            localStorage.setItem('lambidao_active_profile', nome);
-            loginScreen.style.display = 'none';
-            carregarDadosPerfil();
-            inicializarPeer();
-        }
+// ---------------- RECEPTOR ----------------
+function virarReceptor() {
+  esconderTudo();
+  document.getElementById('tela-receptor').classList.remove('hidden');
+  peer = new Peer(peerConfig);
+}
 
-        saveUserBtn.addEventListener('click', () => {
-            const nome = usernameInput.value.trim();
-            if (nome) {
-                if (!perfisCadastrados.includes(nome)) {
-                    perfisCadastrados.push(nome);
-                    localStorage.setItem('lambidao_profiles', JSON.stringify(perfisCadastrados));
-                }
-                usernameInput.value = '';
-                selecionarPerfil(nome);
-            }
-        });
+function conectarReceptor() {
+  const idAlvo = document.getElementById('idalvo').value.trim();
+  const status = document.getElementById('status2');
+  const btn = document.getElementById('btn-conectar');
+  if (!idAlvo) { status.innerText = 'Digite o ID do Mensageiro.'; return; }
 
-        switchUserBtn.addEventListener('click', () => {
-            if (peer) peer.destroy();
-            if (conn) conn.close();
-            conn = null;
-            amigoAtualId = null;
-            chatHeader.innerText = "Nenhum amigo selecionado";
-            messageInput.disabled = true;
-            messagesDiv.innerHTML = '';
-            ocultarJanelaBusca();
-            
-            renderizarListaPerfis();
-            loginScreen.style.display = 'flex';
-        });
+  btn.disabled = true;
+  status.innerText = '🔄 Conectando (pode levar ate 15s)...';
 
-        function carregarDadosPerfil() {
-            displayUsername.innerText = `👋 ${perfilAtual}`;
-            amigos = JSON.parse(localStorage.getItem(`lambidao_friends_${perfilAtual}`)) || [];
-            historicoChat = JSON.parse(localStorage.getItem(`lambidao_chats_${perfilAtual}`)) || {};
-            renderizarAmigos();
-        }
+  const iniciar = () => {
+    // Pedimos audio (ate mudo) so porque peer.call exige um stream local pra
+    // negociar a chamada - nao usamos esse audio de verdade, so o do notebook.
+    navigator.mediaDevices.getUserMedia({audio: true}).then((streamFake) => {
+      // Desliga o microfone do celular imediatamente (nao queremos mandar nada, so receber)
+      streamFake.getTracks().forEach(t => t.enabled = false);
 
-        function salvarDadosPerfil() {
-            localStorage.setItem(`lambidao_friends_${perfilAtual}`, JSON.stringify(amigos));
-            localStorage.setItem(`lambidao_chats_${perfilAtual}`, JSON.stringify(historicoChat));
-        }
+      const chamada = peer.call(idAlvo, streamFake);
 
-        function inicializarPeer() {
-            myIdDiv.innerText = "Gerando seu ID P2P...";
-            
-            const idLimpo = perfilAtual.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const customPeerId = `lambidao-${idLimpo}-${obterHashSimples(perfilAtual)}`;
+      const timeout = setTimeout(() => {
+        status.innerText = '❌ Nao conectou a tempo. Confira o ID e tente de novo.';
+        btn.disabled = false;
+      }, 15000);
 
-            if(peer) peer.destroy();
-            peer = new Peer(customPeerId, peerConfig);
+      chamada.on('stream', (streamRemoto) => {
+        clearTimeout(timeout);
+        document.getElementById('player').srcObject = streamRemoto;
+        status.innerText = '🔊 Tocando!';
+        btn.disabled = false;
+      });
+      chamada.on('close', () => {
+        status.innerText = 'Chamada encerrada.';
+        btn.disabled = false;
+      });
+      chamada.on('error', (e) => {
+        clearTimeout(timeout);
+        status.innerText = 'Erro na chamada: ' + e;
+        btn.disabled = false;
+      });
+    }).catch((e) => {
+      status.innerText = 'Precisa permitir o microfone (nao sera usado, so exigido pra abrir a chamada): ' + e.message;
+      btn.disabled = false;
+    });
+  };
 
-            peer.on('open', (id) => {
-                myIdDiv.innerText = id;
-                statusDiv.innerText = "Pronto para conectar!";
-                statusDiv.style.color = "#3ba55d";
-                tentativasReconexao = 0;
-            });
+  if (peer.open) {
+    iniciar();
+  } else {
+    peer.on('open', iniciar);
+  }
 
-            peer.on('error', (err) => {
-                console.error('Peer error:', err.type, err);
-                if (err.type === 'peer-unavailable') {
-                    exibirJanelaBusca("❌ Usuário não encontrado ou está offline.", "#ed4245");
-                    cancelarBuscaEmAndamento();
-                } else if (err.type === 'unavailable-id') {
-                    peer = new Peer(peerConfig);
-                    peer.on('open', (id) => { myIdDiv.innerText = id; });
-                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') {
-                    // Falha no SERVIDOR DE SINALIZAÇÃO (0.peerjs.com), diferente
-                    // de falha de ICE/TURN. Costuma ser intermitente — tenta
-                    // reconectar automaticamente algumas vezes antes de desistir.
-                    statusDiv.innerText = "⚠️ Servidor de sinalização caiu, tentando reconectar...";
-                    statusDiv.style.color = "#faa61a";
-                    tentarReconectarSinalizacao();
-                } else {
-                    exibirJanelaBusca(`❌ Erro de conexão: ${err.type}`, "#ed4245");
-                    cancelarBuscaEmAndamento();
-                }
-            });
-
-            peer.on('connection', (connection) => {
-                monitorarIceState(connection);
-                connection.on('open', () => {
-                    connection.send({ type: 'REQUEST_INFO', username: perfilAtual });
-                    
-                    connection.on('data', (data) => handleDataRecebida(data, connection));
-                    connection.on('close', () => tratarDesconexao());
-                });
-            });
-        }
-
-        // Loga e mostra na tela o estado da conexão ICE (checking / connected /
-        // failed / disconnected). Isso é o mesmo tipo de informação que aparece
-        // em about:webrtc no Firefox, só que direto na sua interface.
-        function monitorarIceState(connection) {
-            connection.on('iceStateChanged', (state) => {
-                console.log('ICE state:', state);
-                if (state === 'checking') {
-                    connModeSpan.innerText = '🔄 negociando conexão (ICE checking)...';
-                } else if (state === 'connected' || state === 'completed') {
-                    connModeSpan.innerText = '';
-                } else if (state === 'failed') {
-                    connModeSpan.innerText = '⚠️ ICE falhou — verifique o TURN';
-                    exibirJanelaBusca("❌ Falha na conexão P2P (ICE failed). Se persistir, a rede de um dos dois está bloqueando conexões diretas mesmo com TURN — tente outra rede (ex: sair do 4G/CGNAT).", "#ed4245");
-                } else if (state === 'disconnected') {
-                    connModeSpan.innerText = '⚠️ conexão instável...';
-                }
-            });
-        }
-
-        function obterHashSimples(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = (hash << 5) - hash + str.charCodeAt(i);
-                hash |= 0;
-            }
-            return Math.abs(hash).toString(16).substring(0, 4);
-        }
-
-        function exibirJanelaBusca(texto, corBorda = "#faa61a") {
-            searchStatusBox.style.display = "block";
-            searchStatusBox.style.borderLeftColor = corBorda;
-            searchStatusBox.innerText = texto;
-        }
-
-        function ocultarJanelaBusca() {
-            searchStatusBox.style.display = "none";
-        }
-
-        function cancelarBuscaEmAndamento() {
-            if (buscaTimeout) clearTimeout(buscaTimeout);
-            addFriendBtn.disabled = false;
-            addFriendBtn.innerText = "Adicionar Amigo";
-            if (conn && !amigoAtualId) {
-                conn.close();
-                conn = null;
-            }
-        }
-
-        addFriendBtn.addEventListener('click', () => {
-            let targetId = friendIdInput.value.trim();
-
-            if (!targetId) return;
-            if (peer && targetId === peer.id) {
-                exibirJanelaBusca("❌ Você não pode adicionar seu próprio ID!", "#ed4245");
-                return;
-            }
-
-            const jaExiste = amigos.find(a => a.id === targetId);
-            if (jaExiste) {
-                exibirJanelaBusca(`ℹ️ ${jaExiste.nome} já está na sua lista!`, "#5865f2");
-                return;
-            }
-
-            addFriendBtn.disabled = true;
-            addFriendBtn.innerText = "Buscando...";
-            // Timeout maior: com TURN, a negociação ICE pode demorar mais que os
-            // 8s originais, principalmente em conexões móveis/CGNAT.
-            exibirJanelaBusca("🔍 Buscando usuário na rede P2P (pode levar até 15s em algumas redes)...", "#faa61a");
-
-            if (conn) conn.close();
-
-            conn = peer.connect(targetId, { reliable: true });
-            monitorarIceState(conn);
-
-            buscaTimeout = setTimeout(() => {
-                if (!conn || !conn.open) {
-                    exibirJanelaBusca("❌ Usuário não encontrado, offline, ou a conexão ICE não fechou a tempo (verifique o console / about:webrtc).", "#ed4245");
-                    cancelarBuscaEmAndamento();
-                }
-            }, 25000);
-
-            conn.on('open', () => {
-                conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
-                conn.on('data', (data) => handleDataRecebida(data, conn));
-                conn.on('close', () => tratarDesconexao());
-            });
-        });
-
-        function handleDataRecebida(data, connection) {
-            if (data.type === 'REQUEST_INFO') {
-                connection.send({ type: 'RESPONSE_INFO', username: perfilAtual });
-                adicionarAmigoConfirmado(connection.peer, data.username);
-                return;
-            }
-
-            if (data.type === 'RESPONSE_INFO') {
-                if (buscaTimeout) clearTimeout(buscaTimeout);
-                
-                adicionarAmigoConfirmado(connection.peer, data.username);
-                exibirJanelaBusca(`✅ Usuário "${data.username}" encontrado e adicionado!`, "#3ba55d");
-                
-                addFriendBtn.disabled = false;
-                addFriendBtn.innerText = "Adicionar Amigo";
-                friendIdInput.value = '';
-
-                setTimeout(() => { ocultarJanelaBusca(); }, 5000);
-                return;
-            }
-
-            if (data.type === 'CHAT_MESSAGE') {
-                salvarMensagemNoHistorico(connection.peer, data.user, data.text, false, data.time);
-                if (amigoAtualId === connection.peer) {
-                    renderizarMensagemNaTela(data.user, data.text, false, data.time);
-                }
-            }
-        }
-
-        function adicionarAmigoConfirmado(id, nome) {
-            if (!nome) return;
-            
-            const existe = amigos.find(a => a.id === id);
-            if (existe) {
-                existe.nome = nome;
-            } else {
-                amigos.push({ id: id, nome: nome });
-            }
-            
-            salvarDadosPerfil();
-            renderizarAmigos();
-            abrirConversa({ id: id, nome: nome }, false);
-        }
-
-        function tratarDesconexao() {
-            statusDiv.innerText = "Conexão encerrada (Amigo offline).";
-            statusDiv.style.color = "#faa61a";
-            messageInput.disabled = true;
-            messageInput.placeholder = "Amigo offline no momento...";
-            connModeSpan.innerText = '';
-        }
-
-        function renderizarAmigos() {
-            friendsListDiv.innerHTML = '';
-            if (amigos.length === 0) {
-                friendsListDiv.innerHTML = '<div style="color: #72767d; font-size: 12px; margin-top:5px;">Nenhum amigo salvo.</div>';
-                return;
-            }
-
-            amigos.forEach((amigo, index) => {
-                const div = document.createElement('div');
-                div.classList.add('friend-item');
-                if (amigo.id === amigoAtualId) div.classList.add('active');
-                
-                div.innerHTML = `
-                    <span>🟢 ${escapeHtml(amigo.nome)}</span>
-                    <span class="delete-friend" style="color: #ed4245; font-weight: bold; padding: 0 4px;" title="Remover Amigo">✕</span>
-                `;
-                
-                div.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('delete-friend')) return;
-                    abrirConversa(amigo);
-                });
-
-                div.querySelector('.delete-friend').addEventListener('click', () => {
-                    if (amigoAtualId === amigo.id) {
-                        amigoAtualId = null;
-                        chatHeader.innerText = "Nenhum amigo selecionado";
-                        messageInput.disabled = true;
-                        messagesDiv.innerHTML = '';
-                    }
-                    amigos.splice(index, 1);
-                    salvarDadosPerfil();
-                    renderizarAmigos();
-                });
-
-                friendsListDiv.appendChild(div);
-            });
-        }
-
-        function abrirConversa(amigo, reconectar = true) {
-            amigoAtualId = amigo.id;
-            renderizarAmigos();
-            
-            chatHeader.innerText = `Conversando com ${amigo.nome}`;
-            messageInput.placeholder = `Conversar com ${amigo.nome}...`;
-            
-            carregarHistoricoChatLocal(amigo.id);
-
-            if (reconectar) {
-                statusDiv.innerText = `Conectando a ${amigo.nome}...`;
-                statusDiv.style.color = "#faa61a";
-
-                if (conn) conn.close();
-
-                conn = peer.connect(amigo.id, { reliable: true });
-                monitorarIceState(conn);
-                
-                conn.on('open', () => {
-                    statusDiv.innerText = `Conectado com ${amigo.nome}!`;
-                    statusDiv.style.color = "#3ba55d";
-                    messageInput.disabled = false;
-
-                    conn.send({ type: 'REQUEST_INFO', username: perfilAtual });
-                });
-
-                conn.on('data', (data) => handleDataRecebida(data, conn));
-                conn.on('close', () => tratarDesconexao());
-            } else {
-                statusDiv.innerText = `Conectado com ${amigo.nome}!`;
-                statusDiv.style.color = "#3ba55d";
-                messageInput.disabled = false;
-            }
-        }
-
-        function carregarHistoricoChatLocal(amigoId) {
-            messagesDiv.innerHTML = '';
-            const mensagens = historicoChat[amigoId] || [];
-            mensagens.forEach(msg => {
-                renderizarMensagemNaTela(msg.user, msg.text, msg.ehMim, msg.time);
-            });
-        }
-
-        function salvarMensagemNoHistorico(amigoId, user, text, ehMim, time) {
-            if (!historicoChat[amigoId]) {
-                historicoChat[amigoId] = [];
-            }
-            historicoChat[amigoId].push({ user, text, ehMim, time });
-            salvarDadosPerfil();
-        }
-
-        function renderizarMensagemNaTela(usuario, texto, ehMim, hora) {
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message');
-            if (ehMim) msgDiv.classList.add('me');
-
-            msgDiv.innerHTML = `
-                <div class="user">${escapeHtml(usuario)} <span class="time">${hora}</span></div>
-                <div>${escapeHtml(texto)}</div>
-            `;
-            messagesDiv.appendChild(msgDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && messageInput.value.trim() !== '' && conn && conn.open) {
-                const texto = messageInput.value.trim();
-                const horaAtual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                const payload = {
-                    type: 'CHAT_MESSAGE',
-                    user: perfilAtual,
-                    text: texto,
-                    time: horaAtual
-                };
-                
-                conn.send(payload);
-
-                salvarMensagemNoHistorico(amigoAtualId, perfilAtual, texto, true, horaAtual);
-                renderizarMensagemNaTela(perfilAtual, texto, true, horaAtual);
-                
-                messageInput.value = '';
-            }
-        });
-
-        myIdDiv.addEventListener('click', () => {
-            if(myIdDiv.innerText.includes("...")) return;
-            navigator.clipboard.writeText(myIdDiv.innerText);
-            alert("Seu ID P2P foi copiado!");
-        });
-
-        function escapeHtml(text) {
-            return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-        }
-    </script>
+  peer.on('error', (err) => {
+    status.innerText = '❌ Erro: ' + err.type + (err.type === 'peer-unavailable' ? ' (ID nao encontrado ou Mensageiro offline)' : '');
+    btn.disabled = false;
+  });
+}
+</script>
 </body>
 </html>
