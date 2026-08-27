@@ -74,7 +74,14 @@ async function virarMensageiro() {
 
   try {
     status.innerText = 'Pedindo acesso ao audio (escolha o microfone streamsink/monitor)...';
-    meuStream = await navigator.mediaDevices.getUserMedia({audio: true});
+    meuStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        latency: 0
+      }
+    });
     status.innerText = 'Audio pronto. Gerando ID...';
   } catch (e) {
     status.innerText = 'Erro ao pegar audio: ' + e.message;
